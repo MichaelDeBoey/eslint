@@ -8,14 +8,19 @@ eleventyNavigation:
 
 ---
 
+{%- from 'components/npx_tabs.macro.html' import npx_tabs %}
+
 ::: tip
 This page explains how to ignore files using the flat config format. For the deprecated eslintrc format, [see the deprecated documentation](ignore-deprecated).
 :::
 
+::: tip
+This page explains how to use `ignores` property of an ESLint configuration object to globally ignore files and directories (aka global ignores). The `ignores` property can behave as either global or non-global depending on how you use it. For more information on non-global ignores, see [Specifying files and ignores](configuration-files#specifying-files-and-ignores). For more information on the differences between global and non-global ignores, see [Globally ignoring files with `ignores`](configuration-files#globally-ignoring-files-with-ignores).
+:::
 You can configure ESLint to ignore certain files and directories while linting by specifying one or more glob patterns in the following ways:
 
-* Inside of your `eslint.config.js` file
-* On the command line using `--ignore-pattern`
+* Inside of your `eslint.config.js` file.
+* On the command line using `--ignore-pattern`.
 
 ## Ignoring Files
 
@@ -34,9 +39,10 @@ This configuration specifies that all of the files in the `.config` directory sh
 
 You can also ignore files on the command line using `--ignore-pattern`, such as:
 
-```shell
-npx eslint . --ignore-pattern ".config/*"
-```
+{{ npx_tabs({
+    package: "eslint",
+    args: [".", "--ignore-pattern", "\'.config/*\'"]
+}) }}
 
 ## Ignoring Directories
 
@@ -78,14 +84,48 @@ export default [
 ];
 ```
 
+If you'd like to ignore a directory except for specific files or subdirectories, then the ignore pattern `directory/**/*` must be used instead of `directory/**`. The pattern `directory/**` ignores the entire directory and its contents, so traversal will skip over the directory completely and you cannot unignore anything inside.
+
+For example,  `build/**` ignores directory `build` and its contents, whereas `build/**/*` ignores only its contents. If you'd like to ignore everything in the `build` directory except for `build/test.js`, you'd need to create a config like this:
+
+```js
+export default [
+    {
+        ignores: [
+            "build/**/*",     // ignore all contents in and under `build/` directory but not the `build/` directory itself
+            "!build/test.js"  // unignore `!build/test.js`
+        ]
+    }
+];
+```
+
+If you'd like to ignore a directory except for specific files at any level under the directory, you should also ensure that subdirectories are not ignored. Note that while patterns that end with `/` only match directories, patterns that don't end with `/` match both files and directories so it isn't possible to write a single pattern that only ignores files, but you can achieve this with two patterns: one to ignore all contents and another to unignore subdirectories.
+
+For example, this config ignores all files in and under `build` directory except for files named `test.js` at any level:
+
+```js
+export default [
+    {
+        ignores: [
+            "build/**/*",        // ignore all contents in and under `build/` directory but not the `build/` directory itself
+            "!build/**/*/",      // unignore all subdirectories
+            "!build/**/test.js"  // unignore `test.js` files
+        ]
+    }
+];
+```
+
+::: important
 Note that only global `ignores` patterns can match directories.
 `ignores` patterns that are specific to a configuration will only match file names.
+:::
 
 You can also unignore files on the command line using `--ignore-pattern`, such as:
 
-```shell
-npx eslint . --ignore-pattern "!node_modules/"
-```
+{{ npx_tabs({
+    package: "eslint",
+    args: [".", "--ignore-pattern", "\'!node_modules/\'"]
+}) }}
 
 ## Glob Pattern Resolution
 
@@ -110,9 +150,10 @@ export default [
 
 And then you run:
 
-```shell
-npx eslint foo.js
-```
+{{ npx_tabs({
+    package: "eslint",
+    args: ["foo.js"]
+}) }}
 
 You'll see this warning:
 
@@ -124,3 +165,27 @@ foo.js
 ```
 
 This message occurs because ESLint is unsure if you wanted to actually lint the file or not. As the message indicates, you can use `--no-ignore` to omit using the ignore rules.
+
+## Including `.gitignore` Files
+
+If you want to include patterns from a `.gitignore` file or any other file with gitignore-style patterns, you can use [`includeIgnoreFile`](https://github.com/eslint/rewrite/tree/main/packages/compat#including-ignore-files) utility from the [`@eslint/compat`](https://www.npmjs.com/package/@eslint/compat) package.
+
+```js
+// eslint.config.js
+import { includeIgnoreFile } from "@eslint/compat";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const gitignorePath = path.resolve(__dirname, ".gitignore");
+
+export default [
+    includeIgnoreFile(gitignorePath),
+    {
+        // your overrides
+    }
+];
+```
+
+This automatically loads the specified file and translates gitignore-style patterns into `ignores` glob patterns.
