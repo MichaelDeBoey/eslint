@@ -2292,6 +2292,10 @@ export interface ESLintRules extends Linter.RulesRecord {
 				 * @default false
 				 */
 				includeExports: boolean;
+				/**
+				 * @default false
+				 */
+				allowSeparateTypeImports: boolean;
 			}>,
 		]
 	>;
@@ -3468,6 +3472,11 @@ export interface ESLintRules extends Linter.RulesRecord {
 				| {
 						property: string;
 						allowObjects?: string[];
+						message?: string | undefined;
+				  }
+				| {
+						object: string;
+						allowProperties?: string[];
 						message?: string | undefined;
 				  }
 			>,
