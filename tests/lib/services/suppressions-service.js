@@ -175,6 +175,62 @@ describe("SuppressionsService", () => {
 		});
 	});
 
+	describe("save()", () => {
+		it("should write valid JSON to filePath", async () => {
+			const suppressionsService = new SuppressionsService({
+				filePath: "/project/eslint-suppressions.json",
+				cwd: "/project",
+			});
+			const writeStub = sinon.stub(fs.promises, "writeFile").resolves();
+			const suppressions = {
+				"b-file.js": { "no-console": { count: 1 } },
+				"a-file.js": { "no-unused-vars": { count: 2 } },
+			};
+
+			await suppressionsService.save(suppressions);
+
+			assert.ok(
+				writeStub.calledOnce,
+				"Expected writeFile to be called once",
+			);
+			assert.strictEqual(
+				writeStub.firstCall.args[0],
+				"/project/eslint-suppressions.json",
+				"Expected writeFile to use the correct filePath",
+			);
+
+			// Verify the content is valid JSON and matches the object
+			const writtenContent = writeStub.firstCall.args[1];
+
+			assert.deepStrictEqual(JSON.parse(writtenContent), suppressions);
+		});
+
+		it("should write deterministic JSON by sorting keys alphabetically", async () => {
+			const suppressionsService = new SuppressionsService({
+				filePath: "/project/eslint-suppressions.json",
+				cwd: "/project",
+			});
+			const writeStub = sinon.stub(fs.promises, "writeFile").resolves();
+			const suppressions = {
+				"b-file.js": { "no-console": { count: 1 } },
+				"a-file.js": { "no-unused-vars": { count: 2 } },
+			};
+
+			await suppressionsService.save(suppressions);
+
+			const writtenContent = writeStub.firstCall.args[1];
+
+			// json-stable-stringify sorts keys, so "a-file.js" should come before "b-file.js"
+			const aIndex = writtenContent.indexOf("a-file.js");
+			const bIndex = writtenContent.indexOf("b-file.js");
+
+			assert.ok(
+				aIndex !== -1 && bIndex !== -1 && aIndex < bIndex,
+				"Expected keys to be sorted alphabetically (stable stringify)",
+			);
+		});
+	});
+
 	describe("suppress()", () => {
 		it("should suppress all violations when no rules filter is provided", async () => {
 			const cwd = path.resolve("/project");
