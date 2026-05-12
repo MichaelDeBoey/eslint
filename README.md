@@ -315,8 +315,8 @@ Tanuj Kanti
 </a>
 </td><td align="center" valign="top" width="11%">
 <a href="https://github.com/lumirlumir">
-<img src="https://github.com/lumirlumir.png?s=75" width="75" height="75" alt="루밀LuMir's Avatar"><br />
-루밀LuMir
+<img src="https://github.com/lumirlumir.png?s=75" width="75" height="75" alt="lumir's Avatar"><br />
+lumir
 </a>
 </td><td align="center" valign="top" width="11%">
 <a href="https://github.com/Pixel998">
